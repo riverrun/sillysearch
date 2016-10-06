@@ -1,5 +1,7 @@
 module Main where
 
+import Control.Monad
+import Data.List
 import Options.Applicative
 import System.Directory
 import System.FilePath
@@ -10,6 +12,7 @@ data Options = Options
     { rootDir :: FilePath
     , search :: String
     , replace :: String
+    , extension :: String
     }
 
 optsParser :: Parser Options
@@ -22,6 +25,9 @@ optsParser = Options
     <*> strOption
         (long "replace" <> short 'r' <> value ""
         <> metavar "REPLACE" <> help "Replace string")
+    <*> strOption
+        (long "extension" <> short 'x' <> value ""
+        <> metavar "EXTENSION" <> help "File extension")
 
 optsParserInfo :: ParserInfo Options
 optsParserInfo = info (helper <*> optsParser)
@@ -31,22 +37,26 @@ optsParserInfo = info (helper <*> optsParser)
 main :: IO ()
 main = do
     opts <- execParser optsParserInfo
-    mapDir (search opts) (replace opts) (rootDir opts)
+    mapDir opts (rootDir opts)
 
 notList :: [String]
 notList = [".git", "deps", "doc", "_build", "__pycache__", "node_modules"]
 
-runSearch :: String -> String -> FilePath -> IO ()
-runSearch str "" filename = do
-    contents <- B.readFile filename
-    if contents =~ str
-        then putStrLn filename
-        else return ()
-runSearch str replaceStr filename = putStrLn filename -- search and replace
+runTask :: Options -> FilePath -> IO ()
+runTask opts@Options {extension = ""} filename = runSearch opts filename
+runTask opts filename =
+    when (extension opts `isSuffixOf` filename) $ runSearch opts filename
 
-mapDir :: String -> String -> FilePath -> IO ()
-mapDir str replaceStr path = do
+runSearch :: Options -> FilePath -> IO ()
+runSearch Options {search = str, replace = ""} filename = do
+    contents <- B.readFile filename
+    when (contents =~ str) $ putStrLn filename
+runSearch opts filename = putStrLn filename -- search and replace
+
+mapDir :: Options -> FilePath -> IO ()
+mapDir opts path = do
     isFile <- doesFileExist path
-    if isFile then runSearch str replaceStr path
-    else listDirectory path >>=
-        mapM_ (mapDir str replaceStr . (path </>)) . filter (`notElem` notList)
+    if isFile
+        then runTask opts path
+        else listDirectory path >>=
+            mapM_ (mapDir opts . (path </>)) . filter (`notElem` notList)
