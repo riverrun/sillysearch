@@ -5,8 +5,9 @@ import Data.List
 import Options.Applicative
 import System.Directory
 import System.FilePath
-import Text.Regex.Posix
-import qualified Data.ByteString as B
+import Text.Regex.PCRE
+import Text.Regex.PCRE.ByteString.Utils
+import qualified Data.ByteString.Char8 as BC
 
 data Options = Options
     { rootDir :: FilePath
@@ -40,18 +41,18 @@ main = do
     mapDir opts (rootDir opts)
 
 notList :: [String]
-notList = [".git", "deps", "doc", "_build", "__pycache__", "node_modules"]
+notList = [".git", "deps", "doc", "_build", "__pycache__", "node_modules", ".stack-work"]
 
 runTask :: Options -> FilePath -> IO ()
-runTask opts@Options {extension = ""} filename = runSearch opts filename
-runTask opts filename =
-    when (extension opts `isSuffixOf` filename) $ runSearch opts filename
+runTask opts@Options {extension = ext} filename =
+    when (ext `isSuffixOf` filename || ext == "") $ BC.readFile filename >>=
+        searchReplace opts filename
 
-runSearch :: Options -> FilePath -> IO ()
-runSearch Options {search = str, replace = ""} filename = do
-    contents <- B.readFile filename
+searchReplace :: Options -> FilePath -> BC.ByteString -> IO ()
+searchReplace Options {search = str, replace = ""} filename contents =
     when (contents =~ str) $ putStrLn filename
-runSearch opts filename = putStrLn filename -- search and replace
+searchReplace Options {search = str, replace = rep} filename contents =
+    putStrLn filename -- search and replace
 
 mapDir :: Options -> FilePath -> IO ()
 mapDir opts path = do

@@ -20,6 +20,6 @@ executable codesearch
                      , optparse-applicative
                      , directory >= 1.2
                      , filepath >= 1.4
-                     , regex-compat
-                     , regex-posix
+                     , regex-pcre-builtin
+                     , pcre-utils
                      , bytestring
