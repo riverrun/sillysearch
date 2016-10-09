@@ -43,6 +43,14 @@ main = do
 notList :: [String]
 notList = [".git", "deps", "doc", "_build", "__pycache__", "node_modules", ".stack-work"]
 
+mapDir :: Options -> FilePath -> IO ()
+mapDir opts path = do
+    isFile <- doesFileExist path
+    if isFile
+        then runTask opts path
+        else listDirectory path >>=
+            mapM_ (mapDir opts . (path </>)) . filter (`notElem` notList)
+
 runTask :: Options -> FilePath -> IO ()
 runTask opts@Options {extension = ext} filename =
     when (ext `isSuffixOf` filename || ext == "") $ BC.readFile filename >>=
@@ -52,12 +60,9 @@ searchReplace :: Options -> FilePath -> BC.ByteString -> IO ()
 searchReplace Options {search = str, replace = ""} filename contents =
     when (contents =~ str) $ putStrLn filename
 searchReplace Options {search = str, replace = rep} filename contents =
-    putStrLn filename -- search and replace
-
-mapDir :: Options -> FilePath -> IO ()
-mapDir opts path = do
-    isFile <- doesFileExist path
-    if isFile
-        then runTask opts path
-        else listDirectory path >>=
-            mapM_ (mapDir opts . (path </>)) . filter (`notElem` notList)
+    when (contents =~ str) $ do
+    putStrLn filename
+    newContents <- substituteCompile (BC.pack str) contents (BC.pack rep)
+    case newContents of
+        Left err -> putStrLn err
+        Right newContents -> BC.writeFile filename newContents

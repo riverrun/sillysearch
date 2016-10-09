@@ -1,5 +1,5 @@
-# Codesearch
+# Sillysearch
 
-A code search / replace tool written in Haskell.
+A code repository search / replace tool written in Haskell.
 
 WIP
