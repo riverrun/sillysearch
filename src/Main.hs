@@ -38,6 +38,9 @@ optsParserInfo = info (helper <*> optsParser)
 main :: IO ()
 main = do
     opts <- execParser optsParserInfo
+    if replace opts == ""
+        then putStrLn $ "Searching for " ++ search opts ++ " in " ++ rootDir opts
+        else putStrLn $ "Replacing " ++ search opts ++ " with " ++ replace opts ++ " in " ++ rootDir opts
     mapDir opts (rootDir opts)
 
 notList :: [String]
@@ -53,15 +56,15 @@ mapDir opts path = do
 
 runTask :: Options -> FilePath -> IO ()
 runTask opts@Options {extension = ext} filename =
-    when (ext `isSuffixOf` filename || ext == "") $ BC.readFile filename >>=
+    when (("." ++ ext) `isSuffixOf` filename || ext == "") $ BC.readFile filename >>=
         searchReplace opts filename
 
 searchReplace :: Options -> FilePath -> BC.ByteString -> IO ()
 searchReplace Options {search = str, replace = ""} filename contents =
-    when (contents =~ str) $ putStrLn filename
+    when (contents =~ str) $ putStrLn $ "\t" ++ filename
 searchReplace Options {search = str, replace = rep} filename contents =
     when (contents =~ str) $ do
-    putStrLn filename
+    putStrLn $ "\t" ++ filename
     newContents <- substituteCompile (BC.pack str) contents (BC.pack rep)
     case newContents of
         Left err -> putStrLn err
