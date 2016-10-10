@@ -13,7 +13,7 @@ data Options = Options
     { rootDir :: FilePath
     , search :: String
     , replace :: String
-    , extension :: String
+    , extension :: [String]
     }
 
 optsParser :: Parser Options
@@ -26,14 +26,14 @@ optsParser = Options
     <*> strOption
         (long "replace" <> short 'r' <> value ""
         <> metavar "REPLACE" <> help "Replace string")
-    <*> strOption
-        (long "extension" <> short 'x' <> value ""
-        <> metavar "EXTENSION" <> help "File extension")
+    <*> (many . strOption)
+        (long "extension" <> short 'x'
+        <> metavar "EXTENSION" <> help "File extensions to search")
 
 optsParserInfo :: ParserInfo Options
 optsParserInfo = info (helper <*> optsParser)
-    (fullDesc <> progDesc "Search / replace tool for code repositories"
-    <> header "Search / replace code")
+    (fullDesc <> progDesc "Silly tool to search / replace code"
+    <> header "Search / replace tool for code repositories")
 
 main :: IO ()
 main = do
@@ -56,8 +56,8 @@ mapDir opts path = do
 
 runTask :: Options -> FilePath -> IO ()
 runTask opts@Options {extension = ext} filename =
-    when (("." ++ ext) `isSuffixOf` filename || ext == "") $ BC.readFile filename >>=
-        searchReplace opts filename
+    when (any (\x -> ("." ++ x) `isSuffixOf` filename) ext || null ext) $
+    BC.readFile filename >>= searchReplace opts filename
 
 searchReplace :: Options -> FilePath -> BC.ByteString -> IO ()
 searchReplace Options {search = str, replace = ""} filename contents =
