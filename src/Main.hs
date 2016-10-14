@@ -44,7 +44,7 @@ main = do
     mapDir opts (rootDir opts)
 
 notList :: [String]
-notList = [".git", "deps", "doc", "_build", "__pycache__", "node_modules", ".stack-work"]
+notList = [".git", "deps", "doc", "_build", "__pycache__", "node_modules", ".stack-work", "tmp"]
 
 mapDir :: Options -> FilePath -> IO ()
 mapDir opts path = do
