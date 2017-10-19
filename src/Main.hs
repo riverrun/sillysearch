@@ -8,6 +8,7 @@ import System.FilePath
 import Text.Regex.PCRE
 import Text.Regex.PCRE.ByteString.Utils
 import qualified Data.ByteString.Char8 as BC
+import Data.Monoid ((<>))
 
 data Options = Options
     { rootDir :: FilePath
