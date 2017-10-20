@@ -61,12 +61,12 @@ runTask opts@Options {extension = ext} filename =
     BC.readFile filename >>= searchReplace opts filename
 
 searchReplace :: Options -> FilePath -> BC.ByteString -> IO ()
-searchReplace Options {search = str, replace = ""} filename contents =
-    when (contents =~ str) $ putStrLn $ "\t" ++ filename
-searchReplace Options {search = str, replace = rep} filename contents =
-    when (contents =~ str) $ do
+searchReplace Options {search = str', replace = ""} filename contents =
+    when (contents =~ str') $ putStrLn $ "\t" ++ filename
+searchReplace Options {search = str', replace = rep} filename contents =
+    when (contents =~ str') $ do
     putStrLn $ "\t" ++ filename
-    newContents <- substituteCompile (BC.pack str) contents (BC.pack rep)
+    newContents <- substituteCompile (BC.pack str') contents (BC.pack rep)
     case newContents of
         Left err -> putStrLn err
-        Right newContents -> BC.writeFile filename newContents
+        Right newContents' -> BC.writeFile filename newContents'
